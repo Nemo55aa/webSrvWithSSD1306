@@ -17,7 +17,7 @@
  */
 
 #include "WiFiS3.h"
-
+#include "displays.h"
 
 #include "arduino_secrets.h" 
 ///////please enter your sensitive data in the Secret tab/arduino_secrets.h
@@ -51,7 +51,6 @@ void setup() {
     // check for the WiFi module:
     if (WiFi.status() == WL_NO_MODULE) {
       Serial.println("Communication with WiFi module failed!");
-      // don't continue
       while (true);
     }
 
@@ -66,76 +65,35 @@ void setup() {
     Serial.println(ssid);
     // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
     status = WiFi.begin(ssid, pass);
-
-    // wait 10 seconds for connection:
-    //delay(10000);
   }
   // you're connected now, so print out the status:
   printWifiStatus();
+
+  while(!client.connect(server, 80000)){
+    Serial.println("connecting to server...");
+    printTextDisp("connecting to server...");
+  }
+
+  delay(250);
+  Serial.println("connected!");
+  printTextDisp("connected!");
 }
 
-/* just wrap the received data up to 80 columns in the serial print*/
-/* -------------------------------------------------------------------------- */
-void read_request() {
-/* -------------------------------------------------------------------------- */  
-  uint32_t received_data_num = 0;
-
-  while (client.available()) {
-    /* actual data reception */
-    char c = client.read();
-    /* print data to serial port */
-    Serial.print(c);
-    /* wrap data to 80 columns*/
-    received_data_num++;
-    if(received_data_num % 80 == 0) { 
-      
-    }
-    
-  }  
-}
-
-/* -------------------------------------------------------------------------- */
 void loop() {
-/* -------------------------------------------------------------------------- */  
-  // if there's incoming data from the net connection.
-  // send it out the serial port.  This is for debugging
-  // purposes only:
-  read_request();
-  
-  // if ten seconds have passed since your last connection,
-  // then connect again and send data:
-  if (millis() - lastConnectionTime > postingInterval) {
-    httpRequest();
+  while(!client.connect(server, 80000)){
+    Serial.println("connecting to server...");
+    printTextDisp("connecting to server...");
   }
+  delay(250);
+  Serial.println("connected!");
+  printTextDisp("connected!");
 
-}
-
-// this method makes a HTTP connection to the server:
-/* -------------------------------------------------------------------------- */
-void httpRequest() {
-/* -------------------------------------------------------------------------- */  
-  // close any connection before send a new request.
-  // This will free the socket on the NINA module
-  client.stop();
-
-  // if there's a successful connection:
-  if (client.connect(server, 80000)) {
-    Serial.println("connecting...");
-    // send the HTTP GET request:
-    client.println("GET / HTTP/1.1");
-    client.println("Host: example.org");
-    client.println("User-Agent: ArduinoWiFi/1.1");
-    client.println("Connection: close");
-    client.println();
-    // note the time that the connection was made:
-    lastConnectionTime = millis();
-  } else {
-    // if you couldn't make a connection:
-    Serial.println("connection failed");
+  if(client.connected()){
+    client.write("time: ");
+    client.write(millis()*1000);
   }
 }
 
-/* -------------------------------------------------------------------------- */
 void printWifiStatus() {
 /* -------------------------------------------------------------------------- */  
   // print the SSID of the network you're attached to:
